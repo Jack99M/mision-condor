@@ -1,122 +1,117 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { KeyboardControls } from '@react-three/drei'
+import Escenario from './components/Escenario'
+import Jugador from './components/Jugador'
+import Obstaculo from './components/Obstaculo'
+import Marcador from './components/Marcador'
+import { OBSTACULOS } from './gameConfig'
+import { iniciarAudio, sonido, silenciarAudio } from './sonidos'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+const TECLAS = [
+  { name: 'adelante', keys: ['ArrowUp', 'KeyW'] },
+  { name: 'atras', keys: ['ArrowDown', 'KeyS'] },
+  { name: 'izquierda', keys: ['ArrowLeft', 'KeyA'] },
+  { name: 'derecha', keys: ['ArrowRight', 'KeyD'] },
+]
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+export default function App() {
+  const [estado, setEstado] = useState('inicio')
+  const [muertes, setMuertes] = useState(0)
+  const [progreso, setProgreso] = useState(0)
+  const [silencio, setSilencio] = useState(false)
+  const [aviso, setAviso] = useState('')
+  const [sesion, setSesion] = useState(0)
+  const [error3D, setError3D] = useState(false)
+  // Estado compartido para la animación, sin actualizar React en cada cuadro.
+  const partida = useRef({ estado: 'inicio', tiempo: 0 })
+  const tactil = useRef({ adelante: false, atras: false, izquierda: false, derecha: false })
+  const temporizador = useRef(null)
+  const avanzarTiempo = useCallback((delta) => {
+    if (partida.current.estado === 'jugando') partida.current.tiempo += delta
+  }, [])
 
-      <div className="ticks"></div>
+  function cambiarEstado(nuevo) {
+    partida.current.estado = nuevo
+    setEstado(nuevo)
+  }
+  function menuPrincipal() {
+    cambiarEstado('inicio')
+    setMuertes(0)
+    setProgreso(0)
+    setAviso('')
+    clearTimeout(temporizador.current)
+    partida.current.tiempo = 0
+    setSesion((n) => n + 1)
+  }
+  useEffect(() => {
+    function perderFoco() {
+      if (partida.current.estado === 'jugando') {
+        partida.current.estado = 'pausa'
+        setEstado('pausa')
+      }
+      Object.keys(tactil.current).forEach((tecla) => { tactil.current[tecla] = false })
+    }
+    window.addEventListener('blur', perderFoco)
+    return () => {
+      window.removeEventListener('blur', perderFoco)
+      clearTimeout(temporizador.current)
+    }
+  }, [])
+  function comenzar() {
+    iniciarAudio()
+    sonido('inicio')
+    setMuertes(0)
+    setProgreso(0)
+    setAviso('')
+    clearTimeout(temporizador.current)
+    partida.current.tiempo = 0
+    setSesion((n) => n + 1)
+    cambiarEstado('jugando')
+  }
+  const morir = useCallback((causa) => {
+    setMuertes((n) => n + 1)
+    setProgreso(0)
+    sonido('choque')
+    setAviso(causa === 'caida' ? '¡Al agua! Vuelve a intentarlo.' : '¡Choque! Otra oportunidad desde A.')
+    clearTimeout(temporizador.current)
+    temporizador.current = setTimeout(() => setAviso(''), 2200)
+  }, [])
+  const ganar = useCallback(() => {
+    partida.current.estado = 'victoria'
+    setEstado('victoria')
+    setProgreso(100)
+    setAviso('')
+    sonido('victoria')
+  }, [])
+  function alternarPausa() {
+    if (estado === 'jugando') cambiarEstado('pausa')
+    else if (estado === 'pausa') cambiarEstado('jugando')
+  }
+  function alternarSonido() {
+    iniciarAudio()
+    silenciarAudio(!silencio)
+    setSilencio(!silencio)
+  }
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  return <main className="juego">
+    <KeyboardControls map={TECLAS}>
+      <div className="lienzo" aria-label="Recorrido 3D sobre el agua, del punto A al punto B">
+        <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 4.8, 10], fov: 55, near: 0.1, far: 180 }}
+          onCreated={({ gl }) => gl.domElement.addEventListener('webglcontextlost', (event) => {
+            event.preventDefault()
+            setError3D(true)
+            partida.current.estado = 'pausa'
+          })} fallback={<div className="error-3d">Tu navegador necesita WebGL para mostrar el juego.</div>}>
+          <Escenario partida={partida} avanzarTiempo={avanzarTiempo} />
+          {OBSTACULOS.map((datos) => <Obstaculo key={datos.id} datos={datos} partida={partida} />)}
+          <Jugador key={sesion} partida={partida} tactil={tactil} alMorir={morir} alGanar={ganar} alAvanzar={setProgreso} />
+        </Canvas>
+      </div>
+    </KeyboardControls>
+    <Marcador estado={estado} muertes={muertes} progreso={progreso} silencio={silencio} aviso={aviso}
+      comenzar={comenzar} menuPrincipal={menuPrincipal} alternarPausa={alternarPausa} alternarSonido={alternarSonido} tactil={tactil} />
+    {error3D && <div className="capa-modal"><section className="tarjeta-modal"><h2>Se interrumpió la escena 3D</h2><p>Recarga la página para volver a jugar.</p><button className="boton-principal" onClick={() => window.location.reload()}>Recargar</button></section></div>}
+  </main>
 }
-
-export default App
