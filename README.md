@@ -103,6 +103,16 @@ Cuando el jugador alcanza la coordenada de B, `alGanar` cambia el estado a victo
 
 ## Trabajo del equipo y entrega pendiente
 
-La implementación está en la rama `feature/juego` del repositorio [Jack99M/mision-condor](https://github.com/Jack99M/mision-condor). Incluye el código, esta guía y una captura del menú en `captura-pausa.png`.
+Repositorio: [Jack99M/mision-condor](https://github.com/Jack99M/mision-condor).
 
-Todavía falta coordinar con el equipo sus ramas `feature/jugador`, `feature/obstaculos` y `feature/marcador`, según el trabajo que haga cada integrante. Antes de entregar, deben revisar la integración en `main`, completar el Pull Request y grabar el video con todos los integrantes.
+La entrega se divide en tres commits independientes, preparados desde la misma versión inicial:
+
+| Rama | Contenido |
+| --- | --- |
+| `jugador` | Movimiento, cámara que sigue al objeto y escenario 3D (`Jugador.jsx` y `Escenario.jsx`). |
+| `obstaculo` | Obstáculos móviles, configuración, cálculo de colisiones y sonidos (`Obstaculo.jsx`, `gameConfig.js` y `sonidos.js`). |
+| `marcador` | Integración en `App`, contador de muertes, progreso, victoria, menús, estilos y documentación. |
+
+Cada rama contiene únicamente sus archivos; el juego completo requiere integrar las tres. Los archivos se reparten sin solaparse para facilitar la unión. La rama `feature/juego` conserva la versión completa anterior como respaldo.
+
+Después de que cada integrante revise y suba su parte, deben completar los Pull Requests, probar las tres partes juntas en `main` y grabar el video con todos los integrantes. Para la nomenclatura de ramas y el historial de aportes, revisen también las condiciones de la actividad con el docente.
